@@ -43,8 +43,11 @@ function debug(str) {
 debug("Test");
 
 world = {};
-var img = new Image();
-img.src = 'kirby.png';
+var rock_img = new Image();
+rock_img.src = 'rock.png';
+
+var head_img = new Image();
+head_img.src = 'head.png';
 
 //XXX: TODO Make this prettier!
 function drawCircle(context,entity) {
@@ -55,8 +58,12 @@ function drawCircle(context,entity) {
         var y = entity["y"];
         var w = entity["w"];
         var h = entity["h"]
-
-        drawImage(img, x, y, w, h);
+        if (entity["type"] === 'rock'){
+            drawImage(rock_img, x, y, w, h);
+        } else {
+            drawImage(head_img, x, y, w, h);
+        }
+            
 
         //moveTo(x,y);
         // fillStyle = entity["colour"];
@@ -132,7 +139,9 @@ function getPosition(e) {
 function addEntity(entity, data) {
     world[entity] = data;
     drawNextFrame(); // (but should we?)
-    socket.send(JSON.stringify({entity: data}))
+    let msg = {};
+    msg[entity] = data;
+    socket.send(JSON.stringify(msg));
 }
 var counter = 0;
 function addEntityWithoutName(data) {
@@ -239,17 +248,18 @@ mouse = (function() {
 // Add the application specific mouse listeners!
 //XXX: TODO Make these prettier!
 mouse.mousedowners.push(function(x,y,clicked,e) {
-    addEntityWithoutName({'x':x,'y':y,'w':100,'h':100});
+    var w = Math.random() * (100 - 30) + 30;
+    addEntityWithoutName({'x':x,'y':y,'w':w,'h':w, 'type':'rock'});
+    
 });
 
 mouse.mouseuppers.push(function(x,y,clicked,e) {
-    var w = Math.random() * (100 - 30) + 30;
-    addEntityWithoutName({'x':x,'y':y,'w':w,'h':w});
+    addEntityWithoutName({'x':x-20,'y':y-20,'w':120,'h':191, 'type':'head'});
 });
 
 mouse.mousedraggers.push(function(x,y,clicked,e) {
     var w = Math.random() * (100 - 30) + 30;
-    addEntityWithoutName({'x':x,'y':y,'w':w,'h':w});
+    addEntityWithoutName({'x':x,'y':y,'w':w,'h':w, 'type':'rock'});
 });
 
 
@@ -274,7 +284,8 @@ function wsSetup() {
             let parsed = JSON.parse(msg.data);
             for (let entity in parsed) {
                 world[entity] = parsed[entity]
-            }     
+            }    
+            drawNextFrame() 
         } catch (e) {
             alert("socket on message: " + e);
         }
